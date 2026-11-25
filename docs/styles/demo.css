@@ -1,0 +1,92 @@
+.phone {
+  width: min(78%, 184px);
+  padding: 4px;
+  border: 1px solid #b3d3fd83;
+  border-radius: 23px;
+  background: #090f1d;
+  box-shadow: 0 11px 38px #0009, 0 0 30px #5b79fa33;
+}
+.phone img { width: 100%; border-radius: 18px; }
+.hero-demo { min-width: 0; display: grid; gap: 12px; justify-items: center; }
+.demo-stage {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  padding-block: 4px;
+}
+.signal-rings {
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: 44%;
+  width: min(100%, 440px);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border: 1px solid #b0c8f027;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.signal-rings::before, .signal-rings::after {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border: 1px solid #b0c8f033;
+  border-radius: 50%;
+}
+.signal-rings::after { inset: 23%; }
+.hero-demo[data-connected="true"] .signal-rings {
+  border-color: #8fc9ff68;
+  animation: signal-confirmed 720ms ease-out;
+}
+.hero-demo[data-connected="true"] .signal-rings::before,
+.hero-demo[data-connected="true"] .signal-rings::after {
+  inset: 0;
+  border-color: #8fc9ffb3;
+  animation: signal-pulse 2.8s ease-out infinite;
+}
+.hero-demo[data-connected="true"] .signal-rings::after { animation-delay: -1.4s; }
+.demo-phone {
+  position: relative;
+  width: min(100%, 236px);
+  padding: 5px;
+  border-color: #b2c5dd85;
+  border-radius: 28px;
+  box-shadow: 0 16px 36px #03060b7d;
+}
+.demo-phone img { border-radius: 23px; }
+.demo-toggle {
+  position: absolute;
+  top: 18%;
+  left: 33%;
+  width: 34%;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.demo-toggle:hover { box-shadow: 0 0 0 1px #c4e5ff82; }
+.demo-toggle:focus-visible { outline-offset: 2px; }
+.demo-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  column-gap: 16px;
+  color: #afbed1;
+  font-size: .78rem;
+  line-height: 1.4;
+}
+.demo-footer a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  color: #c7d7ee;
+  font-family: var(--mono);
+}
+.demo-footer a:hover { color: var(--text); }

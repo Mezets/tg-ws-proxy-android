@@ -1,0 +1,322 @@
+package com.amurcanov.tgwsproxy
+
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.MutablePreferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
+import org.json.JSONObject
+
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "proxy_settings")
+
+class SettingsStore(private val context: Context) {
+
+    companion object {
+        const val DEFAULT_DIRECT_DC2_IP = "149.154.167.220"
+        const val DEFAULT_DIRECT_DC4_IP = "149.154.167.220"
+        private const val LEGACY_DIRECT_DC_IP = "149.154.167.220"
+        const val DEFAULT_LOG_SHOW_INFO = true
+        const val DEFAULT_LOG_SHOW_ERROR = false
+    }
+
+    private object Keys {
+        val PROFILES = stringPreferencesKey("profiles_v1")
+        val ACTIVE_PROFILE = stringPreferencesKey("active_profile_v1")
+        val THEME_MODE = stringPreferencesKey("theme_mode")
+        val IS_DYNAMIC_COLOR = booleanPreferencesKey("is_dynamic_color")
+        val THEME_PALETTE = stringPreferencesKey("theme_palette")
+        val IS_DC_AUTO = booleanPreferencesKey("is_dc_auto")
+        val DC1 = stringPreferencesKey("dc1")
+        val DC2 = stringPreferencesKey("dc2")
+        val DC3 = stringPreferencesKey("dc3")
+        val DC4 = stringPreferencesKey("dc4")
+        val PORT = stringPreferencesKey("port")
+        val BIND_IP = stringPreferencesKey("bind_ip")
+        val POOL_SIZE = intPreferencesKey("pool_size")
+        val CFPROXY_ENABLED = booleanPreferencesKey("cfproxy_enabled")
+        val CUSTOM_CF_DOMAIN_ENABLED = booleanPreferencesKey("custom_cf_domain_enabled")
+        val CUSTOM_CF_DOMAIN = stringPreferencesKey("custom_cf_domain")
+        val AUTO_START_ON_BOOT = booleanPreferencesKey("auto_start_on_boot")
+        val SECRET_KEY = stringPreferencesKey("secret_key")
+        val LOG_AUTOSCROLL = booleanPreferencesKey("log_autoscroll")
+        val LOG_SHOW_DEBUG = booleanPreferencesKey("log_show_debug")
+        val LOG_SHOW_INFO = booleanPreferencesKey("log_show_info")
+        val LOG_SHOW_ERROR = booleanPreferencesKey("log_show_error")
+        val LOG_SHOW_NULL = booleanPreferencesKey("log_show_null")
+        val IS_EXPERIMENTAL_MODE = booleanPreferencesKey("is_experimental_mode")
+        val UPDATE_LAST_CHECK_AT = longPreferencesKey("update_last_check_at")
+        val UPDATE_LATEST_VERSION = stringPreferencesKey("update_latest_version")
+        val UPDATE_LAST_ERROR = stringPreferencesKey("update_last_error")
+        val UPDATE_CHECK_INTERVAL_HOURS = intPreferencesKey("update_check_interval_hours")
+        val UPDATE_POSTPONE_UNTIL = longPreferencesKey("update_postpone_until")
+        val UPDATE_POSTPONE_VERSION = stringPreferencesKey("update_postpone_version")
+        val UPDATE_DIALOG_LAST_SHOWN_VERSION = stringPreferencesKey("update_dialog_last_shown_version")
+        val UPDATE_DIALOG_LAST_SHOWN_AT = longPreferencesKey("update_dialog_last_shown_at")
+        val UPDATE_DIALOG_LAST_ACTION_VERSION = stringPreferencesKey("update_dialog_last_action_version")
+        val UPDATE_DIALOG_LAST_ACTION = stringPreferencesKey("update_dialog_last_action")
+        val UPDATE_DIALOG_LAST_ACTION_AT = longPreferencesKey("update_dialog_last_action_at")
+        val DIRECT_DC_DEFAULTS_MIGRATED = booleanPreferencesKey("direct_dc_defaults_migrated")
+        val DIRECT_DC_DEFAULTS_V2_MIGRATED = booleanPreferencesKey("direct_dc_defaults_v2_migrated")
+    }
+
+    val isReady: Flow<Boolean> = context.dataStore.data.map { true }
+    val isExperimentalMode: Flow<Boolean> = context.dataStore.data.map { it[Keys.IS_EXPERIMENTAL_MODE] ?: false }
+    val themeMode: Flow<String> = context.dataStore.data.map { it[Keys.THEME_MODE] ?: "dark" }
+    val isDynamicColor: Flow<Boolean> = context.dataStore.data.map { it[Keys.IS_DYNAMIC_COLOR] ?: false }
+    val themePalette: Flow<String> = context.dataStore.data.map { it[Keys.THEME_PALETTE] ?: "indigo" }
+    val isDcAuto: Flow<Boolean> = context.dataStore.data.map { it[Keys.IS_DC_AUTO] ?: true }
+    val dc1: Flow<String> = context.dataStore.data.map { it[Keys.DC1] ?: "" }
+    val dc2: Flow<String> = context.dataStore.data.map { it[Keys.DC2] ?: DEFAULT_DIRECT_DC2_IP }
+    val dc3: Flow<String> = context.dataStore.data.map { it[Keys.DC3] ?: "" }
+    val dc4: Flow<String> = context.dataStore.data.map { it[Keys.DC4] ?: DEFAULT_DIRECT_DC4_IP }
+    val dc5: Flow<String> = context.dataStore.data.map { it[stringPreferencesKey("dc5")] ?: "" }
+    val dc203: Flow<String> = context.dataStore.data.map { it[stringPreferencesKey("dc203")] ?: "" }
+    val dc1m: Flow<String> = context.dataStore.data.map { it[stringPreferencesKey("dc1m")] ?: "" }
+    val dc2m: Flow<String> = context.dataStore.data.map { it[stringPreferencesKey("dc2m")] ?: "" }
+    val dc3m: Flow<String> = context.dataStore.data.map { it[stringPreferencesKey("dc3m")] ?: "" }
+    val dc4m: Flow<String> = context.dataStore.data.map { it[stringPreferencesKey("dc4m")] ?: "" }
+    val dc5m: Flow<String> = context.dataStore.data.map { it[stringPreferencesKey("dc5m")] ?: "" }
+    val dc203m: Flow<String> = context.dataStore.data.map { it[stringPreferencesKey("dc203m")] ?: "" }
+    val port: Flow<String> = context.dataStore.data.map { it[Keys.PORT] ?: "1443" }
+    val bindIp: Flow<String> = context.dataStore.data.map { it[Keys.BIND_IP] ?: "127.0.0.1" }
+    val poolSize: Flow<Int> = context.dataStore.data.map { it[Keys.POOL_SIZE] ?: 4 }
+    val cfproxyEnabled: Flow<Boolean> = context.dataStore.data.map { it[Keys.CFPROXY_ENABLED] ?: true }
+    val customCfDomainEnabled: Flow<Boolean> = context.dataStore.data.map { it[Keys.CUSTOM_CF_DOMAIN_ENABLED] ?: false }
+    val customCfDomain: Flow<String> = context.dataStore.data.map { it[Keys.CUSTOM_CF_DOMAIN] ?: "" }
+    val autoStartOnBoot: Flow<Boolean> = context.dataStore.data.map { it[Keys.AUTO_START_ON_BOOT] ?: false }
+    val secretKey: Flow<String> = context.dataStore.data.map { it[Keys.SECRET_KEY] ?: "" }
+
+    val logAutoscroll = context.dataStore.data.map { it[Keys.LOG_AUTOSCROLL] ?: true }
+    suspend fun saveLogAutoscroll(enabled: Boolean) {
+        context.dataStore.edit { it[Keys.LOG_AUTOSCROLL] = enabled }
+    }
+
+    val logShowDebug: Flow<Boolean> = context.dataStore.data.map { it[Keys.LOG_SHOW_DEBUG] ?: false }
+    val logShowInfo: Flow<Boolean> = context.dataStore.data.map { it[Keys.LOG_SHOW_INFO] ?: DEFAULT_LOG_SHOW_INFO }
+    val logShowError: Flow<Boolean> = context.dataStore.data.map { it[Keys.LOG_SHOW_ERROR] ?: DEFAULT_LOG_SHOW_ERROR }
+    val logShowNull: Flow<Boolean> = context.dataStore.data.map { it[Keys.LOG_SHOW_NULL] ?: false }
+    val updateLastCheckAt: Flow<Long> = context.dataStore.data.map { it[Keys.UPDATE_LAST_CHECK_AT] ?: 0L }
+    val updateLatestVersion: Flow<String> = context.dataStore.data.map { it[Keys.UPDATE_LATEST_VERSION] ?: "" }
+    val updateLastError: Flow<String> = context.dataStore.data.map { it[Keys.UPDATE_LAST_ERROR] ?: "" }
+    val updateCheckIntervalHours: Flow<Int> = context.dataStore.data.map {
+        it[Keys.UPDATE_CHECK_INTERVAL_HOURS] ?: DEFAULT_UPDATE_CHECK_INTERVAL_HOURS
+    }
+    val updatePostponeUntil: Flow<Long> = context.dataStore.data.map { it[Keys.UPDATE_POSTPONE_UNTIL] ?: 0L }
+    val updatePostponeVersion: Flow<String> = context.dataStore.data.map { it[Keys.UPDATE_POSTPONE_VERSION] ?: "" }
+    val updateDialogLastShownVersion: Flow<String> = context.dataStore.data.map { it[Keys.UPDATE_DIALOG_LAST_SHOWN_VERSION] ?: "" }
+    val updateDialogLastShownAt: Flow<Long> = context.dataStore.data.map { it[Keys.UPDATE_DIALOG_LAST_SHOWN_AT] ?: 0L }
+    val updateDialogLastActionVersion: Flow<String> = context.dataStore.data.map { it[Keys.UPDATE_DIALOG_LAST_ACTION_VERSION] ?: "" }
+    val updateDialogLastAction: Flow<String> = context.dataStore.data.map { it[Keys.UPDATE_DIALOG_LAST_ACTION] ?: "" }
+    val updateDialogLastActionAt: Flow<Long> = context.dataStore.data.map { it[Keys.UPDATE_DIALOG_LAST_ACTION_AT] ?: 0L }
+
+    internal val profiles = context.dataStore.data.map(::readProfiles).distinctUntilChanged()
+
+    private fun readProfiles(prefs: Preferences): ProfilesState {
+        val activeId = prefs[Keys.ACTIVE_PROFILE] ?: DEFAULT_PROFILE_ID
+        val raw = prefs[Keys.PROFILES]?.let { runCatching { JSONObject(it) }.getOrNull() } ?: JSONObject()
+        val entries = raw.keys().asSequence().mapNotNull { id ->
+            runCatching { ProxyProfile.decode(raw.getJSONObject(id), id) }.getOrNull()
+        }.toMutableList()
+        val current = ProxyProfile(
+            id = activeId,
+            name = entries.firstOrNull { it.id == activeId }?.name
+                ?: context.getString(R.string.profile_default),
+            host = prefs[Keys.BIND_IP] ?: "127.0.0.1",
+            port = prefs[Keys.PORT] ?: "1443",
+            poolSize = prefs[Keys.POOL_SIZE] ?: 4,
+            cloudflare = prefs[Keys.CFPROXY_ENABLED] ?: true,
+            secret = prefs[Keys.SECRET_KEY].orEmpty(),
+            advanced = prefs.asMap().mapNotNull { (key, value) ->
+                key.name.takeIf { it in ProxyProfile.advancedKeys }?.let { it to value.toString() }
+            }.toMap(),
+        )
+        val index = entries.indexOfFirst { it.id == activeId }
+        if (index >= 0) entries[index] = current else entries.add(0, current)
+        return ProfilesState(activeId, entries)
+    }
+
+    private fun MutablePreferences.writeProfiles(profiles: List<ProxyProfile>) {
+        this[Keys.PROFILES] = JSONObject().apply {
+            profiles.forEach { put(it.id, it.encode()) }
+        }.toString()
+    }
+
+    private fun MutablePreferences.applyProfile(profile: ProxyProfile) {
+        this[Keys.ACTIVE_PROFILE] = profile.id
+        this[Keys.BIND_IP] = profile.host
+        this[Keys.PORT] = profile.port
+        this[Keys.POOL_SIZE] = profile.poolSize
+        this[Keys.CFPROXY_ENABLED] = profile.cloudflare
+        this[Keys.SECRET_KEY] = profile.secret.ifBlank(::newProxySecret)
+        for (key in ProxyProfile.advancedKeys) {
+            val value = profile.advanced[key]
+            if (key in ProxyProfile.booleanKeys) {
+                val pref = booleanPreferencesKey(key)
+                if (value == null) remove(pref) else this[pref] = value.toBoolean()
+            } else {
+                val pref = stringPreferencesKey(key)
+                if (value == null) remove(pref) else this[pref] = value
+            }
+        }
+        if ("is_dc_auto" !in profile.advanced) this[Keys.IS_DC_AUTO] = profile.cloudflare
+    }
+
+    internal suspend fun saveProfile(profile: ProxyProfile) {
+        context.dataStore.edit { prefs ->
+            val state = readProfiles(prefs)
+            val entries = state.entries.toMutableList()
+            val index = entries.indexOfFirst { it.id == profile.id }
+            if (index >= 0) entries[index] = profile else {
+                require(entries.size < 100)
+                entries.add(profile)
+            }
+            if (profile.id == state.activeId) prefs.applyProfile(profile)
+            prefs.writeProfiles(entries)
+        }
+    }
+
+    internal suspend fun activateProfile(id: String) {
+        context.dataStore.edit { prefs ->
+            val state = readProfiles(prefs)
+            if (id == state.activeId) return@edit
+            val selected = state.entries.firstOrNull { it.id == id } ?: return@edit
+            prefs.applyProfile(selected)
+            prefs.writeProfiles(state.entries)
+        }
+    }
+
+    internal suspend fun deleteProfile(id: String) {
+        context.dataStore.edit { prefs ->
+            val state = readProfiles(prefs)
+            val remaining = state.entries.filterNot { it.id == id }
+            require(remaining.isNotEmpty())
+            if (id == state.activeId) prefs.applyProfile(remaining.first())
+            prefs.writeProfiles(remaining)
+        }
+    }
+
+    internal suspend fun activeProfileForStart(): ProxyProfile {
+        val prefs = context.dataStore.edit { mutable ->
+            if (!validSecret(mutable[Keys.SECRET_KEY].orEmpty().trim())) {
+                mutable[Keys.SECRET_KEY] = newProxySecret()
+            }
+        }
+        return checkNotNull(readProfiles(prefs).active)
+    }
+
+    suspend fun saveThemeMode(mode: String) {
+        context.dataStore.edit { it[Keys.THEME_MODE] = mode }
+    }
+
+    suspend fun saveDynamicColor(enabled: Boolean) {
+        context.dataStore.edit { it[Keys.IS_DYNAMIC_COLOR] = enabled }
+    }
+
+    suspend fun saveThemePalette(palette: String) {
+        context.dataStore.edit { it[Keys.THEME_PALETTE] = palette }
+    }
+
+    suspend fun saveLogFilters(debug: Boolean, info: Boolean, error: Boolean, isNull: Boolean) {
+        context.dataStore.edit {
+            it[Keys.LOG_SHOW_DEBUG] = debug
+            it[Keys.LOG_SHOW_INFO] = info
+            it[Keys.LOG_SHOW_ERROR] = error
+            it[Keys.LOG_SHOW_NULL] = isNull
+        }
+    }
+
+    suspend fun saveUpdateState(lastCheckAt: Long, latestVersion: String, error: String) {
+        context.dataStore.edit {
+            it[Keys.UPDATE_LAST_CHECK_AT] = lastCheckAt
+            it[Keys.UPDATE_LATEST_VERSION] = latestVersion
+            it[Keys.UPDATE_LAST_ERROR] = error
+        }
+    }
+
+    suspend fun saveUpdateCheckIntervalHours(hours: Int) {
+        context.dataStore.edit { it[Keys.UPDATE_CHECK_INTERVAL_HOURS] = hours }
+    }
+
+    suspend fun saveAutoStartOnBoot(enabled: Boolean) {
+        context.dataStore.edit { it[Keys.AUTO_START_ON_BOOT] = enabled }
+    }
+
+    suspend fun saveUpdatePostpone(version: String, until: Long) {
+        context.dataStore.edit {
+            it[Keys.UPDATE_POSTPONE_VERSION] = version
+            it[Keys.UPDATE_POSTPONE_UNTIL] = until
+        }
+    }
+
+    suspend fun saveUpdateDialogShown(version: String, shownAt: Long) {
+        context.dataStore.edit {
+            it[Keys.UPDATE_DIALOG_LAST_SHOWN_VERSION] = version
+            it[Keys.UPDATE_DIALOG_LAST_SHOWN_AT] = shownAt
+        }
+    }
+
+    suspend fun saveUpdateDialogAction(version: String, action: String, actedAt: Long) {
+        context.dataStore.edit {
+            it[Keys.UPDATE_DIALOG_LAST_ACTION_VERSION] = version
+            it[Keys.UPDATE_DIALOG_LAST_ACTION] = action
+            it[Keys.UPDATE_DIALOG_LAST_ACTION_AT] = actedAt
+        }
+    }
+
+    suspend fun migrateLegacyDefaults() {
+        context.dataStore.edit {
+            if (it[Keys.DIRECT_DC_DEFAULTS_V2_MIGRATED] == true) return@edit
+
+            val dc2 = it[Keys.DC2].orEmpty().trim()
+            if (dc2.isBlank() || dc2 == LEGACY_DIRECT_DC_IP) {
+                it[Keys.DC2] = DEFAULT_DIRECT_DC2_IP
+            }
+
+            val dc4 = it[Keys.DC4].orEmpty().trim()
+            if (dc4.isBlank() || dc4 == LEGACY_DIRECT_DC_IP) {
+                it[Keys.DC4] = DEFAULT_DIRECT_DC4_IP
+            }
+
+            it[Keys.DIRECT_DC_DEFAULTS_MIGRATED] = true
+            it[Keys.DIRECT_DC_DEFAULTS_V2_MIGRATED] = true
+        }
+    }
+
+    internal suspend fun saveAll(profileId: String, isDcAuto: Boolean, dc1: String, dc2: String, dc3: String, dc4: String, dc5: String, dc203: String,
+                        dc1m: String, dc2m: String, dc3m: String, dc4m: String, dc5m: String, dc203m: String,
+                        isExperimental: Boolean, bindIp: String, port: String, poolSize: Int,
+                        cfproxyEnabled: Boolean, customCfDomainEnabled: Boolean, customCfDomain: String, secretKey: String) {
+        context.dataStore.edit {
+            check((it[Keys.ACTIVE_PROFILE] ?: DEFAULT_PROFILE_ID) == profileId)
+            it[Keys.IS_DC_AUTO] = isDcAuto
+            it[Keys.DC1] = dc1
+            it[Keys.DC2] = dc2
+            it[Keys.DC3] = dc3
+            it[Keys.DC4] = dc4
+            it[stringPreferencesKey("dc5")] = dc5
+            it[stringPreferencesKey("dc203")] = dc203
+            it[stringPreferencesKey("dc1m")] = dc1m
+            it[stringPreferencesKey("dc2m")] = dc2m
+            it[stringPreferencesKey("dc3m")] = dc3m
+            it[stringPreferencesKey("dc4m")] = dc4m
+            it[stringPreferencesKey("dc5m")] = dc5m
+            it[stringPreferencesKey("dc203m")] = dc203m
+            it[Keys.IS_EXPERIMENTAL_MODE] = isExperimental
+            it[Keys.BIND_IP] = bindIp
+            it[Keys.PORT] = port
+            it[Keys.POOL_SIZE] = poolSize
+            it[Keys.CFPROXY_ENABLED] = cfproxyEnabled
+            it[Keys.CUSTOM_CF_DOMAIN_ENABLED] = customCfDomainEnabled
+            it[Keys.CUSTOM_CF_DOMAIN] = customCfDomain
+            it[Keys.SECRET_KEY] = secretKey
+        }
+    }
+}

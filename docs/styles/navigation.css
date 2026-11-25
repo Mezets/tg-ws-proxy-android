@@ -1,0 +1,148 @@
+.shell {
+  --outer: clamp(16px, 4.8vw, 72px);
+  --sidebar-width: 160px;
+  --frame-border: 1px solid #c2dbff59;
+  --frame-shadow: 0 34px 86px #060d394f, 0 6px 18px #13245b66, inset 0 1px #e4eeff25;
+  width: min(1320px, calc(100% - 2 * var(--outer)));
+  margin-inline: auto;
+  position: relative;
+  top: var(--outer);
+  margin-bottom: calc(2 * var(--outer));
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  gap: 12px;
+}
+.sidebar {
+  align-self: start;
+  position: sticky;
+  top: var(--outer);
+  z-index: 2;
+  display: grid;
+  align-content: center;
+  height: calc(100svh - 2 * var(--outer));
+  min-height: fit-content;
+}
+.sidebar-menu {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+}
+.sidebar-menu.liquid-panel { border-radius: 18px; }
+.brand {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 0.94rem;
+  font-weight: 730;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.brand img { width: 36px; border: 1px solid #8bbcff77; border-radius: 10px; box-shadow: 0 2px 16px #5288fc39; }
+.site-nav { display: grid; gap: 4px; }
+.site-nav a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 620;
+  text-decoration: none;
+  transition: color 170ms ease, background-color 170ms ease, border-color 170ms ease;
+}
+.site-nav a:hover {
+  color: var(--text);
+  border-color: #accaff2c;
+  background: #a1c3ff16;
+}
+.site-nav a[aria-current="location"] {
+  color: #f4f8ff;
+  border-color: #b7d8ff73;
+  background: #85baff38;
+}
+.icon-definitions { position: absolute; }
+.menu-icon, .arrow-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: currentColor;
+}
+.arrow-icon {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+span.menu-icon { position: relative; }
+span.menu-icon::before, span.menu-icon::after {
+  content: "";
+  position: absolute;
+}
+.icon-home { --icon-motion: translateY(-2px); }
+.icon-home::before {
+  inset: 7px 3px 1px;
+  border: 1.5px solid;
+  border-top: 0;
+  border-radius: 0 0 2px 2px;
+}
+.icon-home::after {
+  top: 3px;
+  left: 3.5px;
+  width: 9px;
+  height: 9px;
+  border-top: 1.5px solid;
+  border-left: 1.5px solid;
+  transform: rotate(45deg);
+}
+.icon-news { --icon-motion: rotate(17deg) scale(1.18); }
+.icon-news::before, .icon-news::after {
+  background: currentColor;
+  clip-path: polygon(50% 0, 63% 37%, 100% 50%, 63% 63%, 50% 100%, 37% 63%, 0 50%, 37% 37%);
+}
+.icon-news::before { inset: 2px 4px 2px 0; }
+.icon-news::after { inset: 0 0 10px 10px; }
+.icon-fork {
+  --icon-motion: translateY(-2px) rotate(-9deg);
+  background:
+    radial-gradient(circle, currentColor 1.8px, transparent 2px) 2px 0 / 5px 5px no-repeat,
+    radial-gradient(circle, currentColor 1.8px, transparent 2px) 9px 0 / 5px 5px no-repeat,
+    radial-gradient(circle, currentColor 1.8px, transparent 2px) 2px 11px / 5px 5px no-repeat;
+}
+.icon-fork::before { top: 4px; bottom: 4px; left: 4px; width: 1.5px; background: currentColor; }
+.icon-fork::after {
+  top: 4px;
+  left: 5px;
+  width: 7px;
+  height: 6px;
+  border-right: 1.5px solid;
+  border-bottom: 1.5px solid;
+  border-radius: 0 0 5px 0;
+}
+.icon-history { --icon-motion: rotate(-24deg); }
+.icon-history::before { inset: 1px; border: 1.5px solid; border-radius: 50%; }
+.icon-history::after { top: 4px; left: 7px; width: 4px; height: 5px; border-left: 1.5px solid; border-bottom: 1.5px solid; }
+.icon-download { --icon-motion: translateY(2px); }
+.icon-top { --icon-motion: translateY(-2px); }
+:is(.sidebar-menu, .site-footer) a:is(:hover, :focus-visible, :active) .menu-icon { animation: menu-icon-motion 440ms ease; }
+@keyframes menu-icon-motion { 50% { transform: var(--icon-motion); } }
+
+.back-to-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.83rem;
+  font-weight: 620;
+  text-decoration: none;
+}
+.sidebar-menu > .back-to-top { width: 100%; padding-inline: 9px; }
+.back-to-top:hover { color: var(--text); background-color: #35548545; }

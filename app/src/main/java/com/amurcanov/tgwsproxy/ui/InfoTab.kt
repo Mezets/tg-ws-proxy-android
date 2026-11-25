@@ -1,0 +1,861 @@
+package com.amurcanov.tgwsproxy.ui
+
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.os.Build
+import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Update
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.amurcanov.tgwsproxy.BuildConfig
+import com.amurcanov.tgwsproxy.LogEntry
+import com.amurcanov.tgwsproxy.LogManager
+import com.amurcanov.tgwsproxy.R
+import com.amurcanov.tgwsproxy.SettingsStore
+import com.amurcanov.tgwsproxy.UPDATE_DIALOG_ACTION_POSTPONED
+import com.amurcanov.tgwsproxy.UPDATE_DIALOG_ACTION_UPDATE
+import com.amurcanov.tgwsproxy.fetchLatestReleaseInfo
+import com.amurcanov.tgwsproxy.isNewerVersion
+import kotlinx.coroutines.launch
+
+private const val AndroidForkRepoUrl = "https://github.com/amurcanov/tg-ws-proxy-android"
+private const val AndroidForkIssuesUrl = "https://github.com/amurcanov/tg-ws-proxy-android/issues"
+private const val DeveloperProfileUrl = "https://github.com/amurcanov"
+private const val OriginalProjectUrl = "https://github.com/Flowseal/tg-ws-proxy"
+private const val ProxyReferenceUrl = "https://github.com/Flowseal/tg-ws-proxy/issues/389"
+@Composable
+fun InfoTab(settingsStore: SettingsStore, appearanceMenu: @Composable () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var showHelpDialog by remember { mutableStateOf(false) }
+    var projectExpanded by rememberSaveable { mutableStateOf(true) }
+    var isCheckingUpdates by remember { mutableStateOf(false) }
+    var pendingManualRelease by remember { mutableStateOf<com.amurcanov.tgwsproxy.AppReleaseInfo?>(null) }
+    val savedPort by settingsStore.port.collectAsStateWithLifecycle(initialValue = "1443")
+    val savedPoolSize by settingsStore.poolSize.collectAsStateWithLifecycle(initialValue = 4)
+    val savedCfEnabled by settingsStore.cfproxyEnabled.collectAsStateWithLifecycle(initialValue = true)
+    val savedCustomCfDomainEnabled by settingsStore.customCfDomainEnabled.collectAsStateWithLifecycle(initialValue = false)
+    val savedCustomCfDomain by settingsStore.customCfDomain.collectAsStateWithLifecycle(initialValue = "")
+    val updateLatestVersion by settingsStore.updateLatestVersion.collectAsStateWithLifecycle(initialValue = "")
+    val updateLastError by settingsStore.updateLastError.collectAsStateWithLifecycle(initialValue = "")
+    val currentLogs by LogManager.logs.collectAsStateWithLifecycle()
+    val currentVersion = remember { "v${BuildConfig.VERSION_NAME.removePrefix("v")}" }
+    val scrollState = rememberScrollState()
+    val updateStatusSubtitle = when {
+        isCheckingUpdates -> stringResource(R.string.update_checking)
+        updateLatestVersion.isNotBlank() && isNewerVersion(currentVersion, updateLatestVersion) ->
+            stringResource(R.string.update_available_on_github, updateLatestVersion)
+        updateLatestVersion.isNotBlank() -> stringResource(R.string.update_latest_version, updateLatestVersion)
+        updateLastError.isNotBlank() -> stringResource(R.string.update_last_check_failed)
+        else -> stringResource(R.string.update_check_manually)
+    }
+    val reportText = buildSupportReport(
+        port = savedPort,
+        poolSize = savedPoolSize,
+        cfEnabled = savedCfEnabled,
+        customCfDomainEnabled = savedCustomCfDomainEnabled,
+        customCfDomain = savedCustomCfDomain,
+        logs = currentLogs,
+        context = context
+    )
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 4.dp)
+                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                .drawWithContent {
+                    drawContent()
+                    val fadeHeight = 32.dp.toPx()
+                    val fadeFraction = (fadeHeight / size.height).coerceIn(0f, 0.5f)
+                    drawRect(
+                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                            colorStops = arrayOf(
+                                0f to if (scrollState.canScrollBackward) Color.Transparent else Color.Black,
+                                fadeFraction to Color.Black,
+                                1f - fadeFraction to Color.Black,
+                                1f to if (scrollState.canScrollForward) Color.Transparent else Color.Black
+                            )
+                        ),
+                        blendMode = BlendMode.DstIn
+                    )
+                }
+                .verticalScroll(scrollState),
+            verticalArrangement = Arrangement.spacedBy(9.dp)
+        ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.info),
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            appearanceMenu()
+        }
+
+        InfoHeroCard(version = currentVersion)
+        Row(Modifier.widthIn(max = 440.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            InfoShortcut("GitHub", Modifier.weight(1f), { openUrlInBrowser(context, AndroidForkRepoUrl) }) {
+                Icon(painterResource(R.drawable.ic_github), null, Modifier.size(18.dp))
+            }
+            InfoShortcut(stringResource(R.string.info_docs), Modifier.weight(1f), { openUrlInBrowser(context, ProxyReferenceUrl) }) {
+                Icon(Icons.AutoMirrored.Filled.MenuBook, null, Modifier.size(18.dp))
+            }
+            InfoShortcut(stringResource(R.string.info_issue), Modifier.weight(1f), { openUrlInBrowser(context, AndroidForkIssuesUrl) }) {
+                Icon(Icons.Default.BugReport, null, Modifier.size(18.dp))
+            }
+            InfoShortcut(stringResource(R.string.info_support), Modifier.weight(1f), { openUrlInBrowser(context, AndroidForkRepoUrl + "/discussions") }) {
+                Icon(Icons.Default.Favorite, null, Modifier.size(18.dp))
+            }
+        }
+
+            WideActionTile(
+                title = stringResource(R.string.help),
+                subtitle = stringResource(R.string.help_subtitle),
+                onClick = { showHelpDialog = true },
+                icon = {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.HelpOutline,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            )
+
+            WideActionTile(
+                title = stringResource(R.string.check_updates),
+                subtitle = updateStatusSubtitle,
+                onClick = {
+                    if (isCheckingUpdates) return@WideActionTile
+                    isCheckingUpdates = true
+                    scope.launch {
+                        val checkedAt = System.currentTimeMillis()
+                        val release = fetchLatestReleaseInfo(currentVersion)
+                        settingsStore.saveUpdateState(
+                            lastCheckAt = checkedAt,
+                            latestVersion = release?.versionTag ?: "",
+                            error = if (release == null) context.getString(R.string.update_check_failed_short) else ""
+                        )
+                        isCheckingUpdates = false
+
+                        if (release == null) {
+                            val message = if (updateLatestVersion.isNotBlank()) {
+                                context.getString(R.string.update_check_failed_known, updateLatestVersion)
+                            } else {
+                                context.getString(R.string.update_check_failed)
+                            }
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                            return@launch
+                        }
+
+                        if (isNewerVersion(currentVersion, release.versionTag)) {
+                            settingsStore.saveUpdateDialogShown(release.versionTag, checkedAt)
+                            pendingManualRelease = release
+                        } else {
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.update_already_latest, release.versionTag),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Update,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            )
+        WideActionTile(
+            title = stringResource(R.string.info_license),
+            subtitle = "GPLv3",
+            onClick = { openUrlInBrowser(context, AndroidForkRepoUrl + "/blob/main/LICENSE") },
+            icon = { Icon(Icons.Default.Description, null, tint = MaterialTheme.colorScheme.primary) },
+        )
+
+        WideActionTile(
+            title = stringResource(R.string.build_report),
+            subtitle = stringResource(R.string.report_subtitle),
+            onClick = {
+                val clipboard = context.getSystemService(ClipboardManager::class.java)
+                clipboard?.setPrimaryClip(ClipData.newPlainText("TgWsProxy Report", reportText))
+                Toast.makeText(context, R.string.report_copied, Toast.LENGTH_SHORT).show()
+            },
+            icon = { Icon(Icons.Default.ContentCopy, null, tint = MaterialTheme.colorScheme.primary) },
+        )
+
+        ExpandableSectionCard(
+            title = stringResource(R.string.about_project),
+            itemCount = stringResource(R.string.links_count, 4),
+            expanded = projectExpanded,
+            onToggle = { projectExpanded = !projectExpanded },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Code,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        ) {
+            Text(
+                text = stringResource(R.string.fork_update_credit),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            ProjectLinkRow(
+                title = stringResource(R.string.android_author),
+                subtitle = stringResource(R.string.android_author_subtitle),
+                onClick = { openUrlInBrowser(context, DeveloperProfileUrl) },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            )
+
+            ProjectLinkRow(
+                title = stringResource(R.string.android_fork_repo),
+                subtitle = stringResource(R.string.android_fork_repo_subtitle),
+                onClick = { openUrlInBrowser(context, AndroidForkRepoUrl) },
+                icon = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_github),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            )
+
+            ProjectLinkRow(
+                title = stringResource(R.string.original_tg_ws_proxy),
+                subtitle = stringResource(R.string.original_tg_ws_proxy_subtitle),
+                onClick = { openUrlInBrowser(context, OriginalProjectUrl) },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Code,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            )
+
+            ProjectLinkRow(
+                title = stringResource(R.string.useful_material),
+                subtitle = stringResource(R.string.useful_material_subtitle),
+                onClick = { openUrlInBrowser(context, ProxyReferenceUrl) },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        }
+
+    }
+
+    pendingManualRelease?.let { release ->
+        AppUpdateDialog(
+            release = release,
+            onPostpone = {
+                pendingManualRelease = null
+                Toast.makeText(context, context.getString(R.string.update_postponed_24h), Toast.LENGTH_SHORT).show()
+                scope.launch {
+                    val now = System.currentTimeMillis()
+                    settingsStore.saveUpdatePostpone(
+                        version = release.versionTag,
+                        until = now + 24L * 60L * 60L * 1000L
+                    )
+                    settingsStore.saveUpdateDialogAction(
+                        version = release.versionTag,
+                        action = UPDATE_DIALOG_ACTION_POSTPONED,
+                        actedAt = now
+                    )
+                }
+            },
+            onUpdate = {
+                pendingManualRelease = null
+                scope.launch {
+                    settingsStore.saveUpdateDialogAction(
+                        version = release.versionTag,
+                        action = UPDATE_DIALOG_ACTION_UPDATE,
+                        actedAt = System.currentTimeMillis()
+                    )
+                    openUrlInBrowser(context, release.releaseUrl)
+                }
+            }
+        )
+    }
+
+    if (showHelpDialog) {
+        Dialog(
+            onDismissRequest = { showHelpDialog = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(32.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp,
+                modifier = Modifier
+                    .fillMaxWidth(0.95f)
+                    .fillMaxHeight(0.85f)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 28.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    Spacer(Modifier.height(28.dp))
+
+                    Text(
+                        stringResource(R.string.help),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(20.dp)
+                    ) {
+                        HelpSection(
+                            title = stringResource(R.string.help_auto_dc_title),
+                            text = stringResource(R.string.help_auto_dc_text)
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                        HelpSection(
+                            title = "CloudFlare CDN",
+                            text = stringResource(R.string.help_cloudflare_text)
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                        HelpSection(
+                            title = stringResource(R.string.ws_pool),
+                            text = stringResource(R.string.help_ws_pool_text)
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                        HelpSection(
+                            title = stringResource(R.string.secret_key),
+                            text = stringResource(R.string.help_secret_key_text)
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                        HelpSection(
+                            title = stringResource(R.string.experimental_mode),
+                            text = stringResource(R.string.help_experimental_text)
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                        HelpSection(
+                            title = stringResource(R.string.autostart),
+                            text = stringResource(R.string.help_autostart_text)
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                        HelpSection(
+                            title = stringResource(R.string.help_slow_connect_title),
+                            text = stringResource(R.string.help_slow_connect_text)
+                        )
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Button(
+                        onClick = { showHelpDialog = false },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(24.dp)
+                    ) {
+                        Text(stringResource(R.string.understood), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    }
+
+                    Spacer(Modifier.height(28.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InfoHeroCard(version: String) {
+    val colors = MaterialTheme.colorScheme
+    AppSectionCard {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            ProxyMark(Modifier.size(62.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f),
+                    )
+                    MetaChip(version)
+                }
+                Text(
+                    stringResource(R.string.info_summary),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun InfoShortcut(
+    label: String,
+    modifier: Modifier,
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.heightIn(min = 58.dp),
+        shape = RoundedCornerShape(15.dp),
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.primary,
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 3.dp, vertical = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            icon()
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ExpandableSectionCard(
+    title: String,
+    itemCount: String,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    icon: @Composable () -> Unit,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val arrowRotation by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        label = "section_arrow_rotation"
+    )
+
+    AppSectionCard(
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .clickable(onClick = onToggle)
+                .padding(vertical = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.primaryContainer
+            ) {
+                Box(
+                    modifier = Modifier.size(40.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    icon()
+                }
+            }
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            MetaChip(text = itemCount)
+
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .size(24.dp)
+                    .rotate(arrowRotation)
+            )
+        }
+
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.30f))
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+private fun MetaChip(text: String) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f)
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun WideActionTile(
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surface,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.primaryContainer
+            ) {
+                Box(
+                    modifier = Modifier.size(34.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    icon()
+                }
+            }
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 18.sp
+                )
+            }
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProjectLinkRow(
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.64f),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.primaryContainer
+            ) {
+                Box(
+                    modifier = Modifier.defaultMinSize(minWidth = 40.dp, minHeight = 40.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    icon()
+                }
+            }
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 18.sp
+                )
+            }
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+private fun buildSupportReport(
+    port: String,
+    poolSize: Int,
+    cfEnabled: Boolean,
+    customCfDomainEnabled: Boolean,
+    customCfDomain: String,
+    logs: List<LogEntry>,
+    context: Context
+): String {
+    val androidVersion = Build.VERSION.RELEASE ?: "?"
+    val sdkInt = Build.VERSION.SDK_INT
+    val primaryAbi = Build.SUPPORTED_ABIS.firstOrNull().orEmpty().ifBlank { "unknown" }
+    val supportedAbis = Build.SUPPORTED_ABIS.joinToString().ifBlank { "unknown" }
+    val supported32Abis = Build.SUPPORTED_32_BIT_ABIS.joinToString().ifBlank { "none" }
+    val supported64Abis = Build.SUPPORTED_64_BIT_ABIS.joinToString().ifBlank { "none" }
+    val manufacturer = Build.MANUFACTURER.orEmpty().ifBlank { "unknown" }
+    val brand = Build.BRAND.orEmpty().ifBlank { "unknown" }
+    val model = Build.MODEL.orEmpty().ifBlank { "unknown" }
+    val device = Build.DEVICE.orEmpty().ifBlank { "unknown" }
+    val product = Build.PRODUCT.orEmpty().ifBlank { "unknown" }
+    val hardware = Build.HARDWARE.orEmpty().ifBlank { "unknown" }
+    val board = Build.BOARD.orEmpty().ifBlank { "unknown" }
+    val romDisplay = Build.DISPLAY.orEmpty().ifBlank { "unknown" }
+    val buildId = Build.ID.orEmpty().ifBlank { "unknown" }
+    val buildFingerprint = Build.FINGERPRINT.orEmpty().ifBlank { "unknown" }
+    val buildType = Build.TYPE.orEmpty().ifBlank { "unknown" }
+    val socManufacturer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        Build.SOC_MANUFACTURER.orEmpty().ifBlank { "unknown" }
+    } else {
+        "n/a"
+    }
+    val socModel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        Build.SOC_MODEL.orEmpty().ifBlank { "unknown" }
+    } else {
+        "n/a"
+    }
+    val mode = if (cfEnabled) "Cloudflare" else context.getString(R.string.report_mode_direct)
+    val cfDomainLine = if (cfEnabled && customCfDomainEnabled && customCfDomain.isNotBlank()) {
+        "\n${context.getString(R.string.report_cf_domain, customCfDomain.trim())}"
+    } else {
+        ""
+    }
+
+    val recentErrors = logs
+        .asReversed()
+        .filter { it.priority >= 5 }
+        .take(10)
+
+    val errorsBlock = if (recentErrors.isEmpty()) {
+        context.getString(R.string.none_lower)
+    } else {
+        recentErrors.joinToString("\n") { entry ->
+            val level = when (entry.priority) {
+                6 -> "ERROR"
+                5 -> "WARN"
+                else -> "INFO"
+            }
+            "- [$level] ${entry.message}${if (entry.count > 1) " (x${entry.count})" else ""}"
+        }
+    }
+
+    return buildString {
+        appendLine(context.getString(R.string.report_app_version, BuildConfig.VERSION_NAME))
+        appendLine(context.getString(R.string.report_android, androidVersion, sdkInt))
+        appendLine(context.getString(R.string.report_device, manufacturer, brand, model))
+        appendLine(context.getString(R.string.report_device_code, device))
+        appendLine(context.getString(R.string.report_product, product))
+        appendLine("ABI: $primaryAbi")
+        appendLine(context.getString(R.string.report_all_abi, supportedAbis))
+        appendLine("32-bit ABI: $supported32Abis")
+        appendLine("64-bit ABI: $supported64Abis")
+        appendLine("SoC: $socManufacturer / $socModel")
+        appendLine("Hardware: $hardware")
+        appendLine("Board: $board")
+        appendLine("ROM: $romDisplay")
+        appendLine("Build ID: $buildId")
+        appendLine("Build type: $buildType")
+        appendLine("Fingerprint: $buildFingerprint")
+        appendLine(context.getString(R.string.report_settings))
+        appendLine(context.getString(R.string.report_mode, mode))
+        appendLine(context.getString(R.string.report_ws_pool, poolSize))
+        append(context.getString(R.string.report_port, port.trim().ifBlank { "1443" }))
+        append(cfDomainLine)
+        appendLine()
+        appendLine()
+        appendLine(context.getString(R.string.report_recent_errors))
+        append(errorsBlock)
+    }.trim()
+}
+
+@Composable
+private fun HelpSection(title: String, text: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            lineHeight = 20.sp
+        )
+    }
+}

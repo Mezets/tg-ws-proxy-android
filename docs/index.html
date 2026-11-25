@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ru" data-type="software">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080d1b">
+  <meta name="description" content="TG WS Proxy для Android. Скачать APK, подключить Telegram и узнать, как работал исходный Android-форк amurcanov.">
+  <meta name="page-type" content="software">
+  <meta name="site-kind" content="software">
+  <title>TG WS Proxy для Android · Mezets</title>
+  <link rel="icon" href="assets/icon.png" type="image/png">
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/navigation.css">
+  <link rel="stylesheet" href="styles/hero.css">
+  <link rel="stylesheet" href="styles/panels.css">
+  <link rel="stylesheet" href="styles/demo.css">
+  <link rel="stylesheet" href="styles/sections.css">
+  <link rel="stylesheet" href="styles/motion.css">
+  <link rel="stylesheet" href="styles/responsive.css">
+  <script src="links.js" defer></script>
+  <script src="site.js" defer></script>
+  <script src="dither.js" defer></script>
+</head>
+<body id="top">
+  <svg class="icon-definitions" width="0" height="0" aria-hidden="true" focusable="false">
+    <symbol id="arrow-down" viewBox="0 0 16 16">
+      <path d="M8 3v10m-4-4 4 4 4-4"/>
+    </symbol>
+    <symbol id="arrow-up" viewBox="0 0 16 16">
+      <path d="M8 13V3m-4 4 4-4 4 4"/>
+    </symbol>
+    <symbol id="arrow-right" viewBox="0 0 16 16">
+      <path d="M3 8h10M9 4l4 4-4 4"/>
+    </symbol>
+    <symbol id="arrow-out" viewBox="0 0 16 16">
+      <path d="m4 12 8-8M6 4h6v6"/>
+    </symbol>
+    <symbol id="arrow-download" viewBox="0 0 16 16">
+      <path d="M8 2v8M5 7l3 3 3-3m-9 3v3a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-3"/>
+    </symbol>
+  </svg>
+  <canvas class="dither-background" data-trail="0.6" aria-hidden="true" hidden></canvas>
+  <a class="skip-link" href="#main">К содержанию</a>
+  <div class="shell wrap">
+    <header class="sidebar">
+      <a class="brand" href="#main" aria-label="TG WS Proxy — к началу страницы">
+        <img src="assets/icon.png" width="44" height="44" alt="">
+        <span>TG WS Proxy</span>
+      </a>
+      <div class="sidebar-menu liquid-panel" data-spotlight>
+        <nav class="site-nav" aria-label="Разделы сайта">
+          <a href="#home"><span class="menu-icon icon-home" aria-hidden="true"></span>Главная</a>
+          <a href="#changes"><span class="menu-icon icon-news" aria-hidden="true"></span>Что нового</a>
+          <a href="#route"><span class="menu-icon icon-fork" aria-hidden="true"></span>Старый форк</a>
+          <a href="#history"><span class="menu-icon icon-history" aria-hidden="true"></span>История</a>
+          <a href="#download"><svg class="arrow-icon menu-icon icon-download" aria-hidden="true" focusable="false"><use href="#arrow-download"/></svg>Скачать</a>
+        </nav>
+        <a class="back-to-top" href="#top"><svg class="arrow-icon menu-icon icon-top" aria-hidden="true" focusable="false"><use href="#arrow-up"/></svg>Наверх</a>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero liquid-panel" id="home" aria-labelledby="hero-title" data-spotlight>
+        <div class="hero-copy" data-enter>
+          <div class="hero-brand">
+            <span class="hero-identity"><img src="assets/icon.png" width="32" height="32" alt="">TG WS Proxy</span>
+            <span class="hero-version">Android · v1.2.4</span>
+          </div>
+          <h1 id="hero-title">Прокси для <span>Telegram</span></h1>
+          <p class="lead hero__lead">Запустите локальный MTProto-прокси на Android и перенесите настройки в Telegram одним нажатием.</p>
+          <div class="actions">
+            <a class="button primary" href="#download" data-link="download" data-specular>Скачать APK <svg class="arrow-icon" aria-hidden="true" focusable="false"><use href="#arrow-download"/></svg></a>
+            <a class="hero-secondary" href="#changes">Что нового <svg class="arrow-icon" aria-hidden="true" focusable="false"><use href="#arrow-down"/></svg></a>
+          </div>
+          <p class="byline"><strong>Mezets</strong> · обновление от <time datetime="2026-11-24">24 ноября 2026</time></p>
+        </div>
+
+        <figure class="hero-demo" data-proxy-demo data-connected="false">
+          <div class="demo-stage">
+            <div class="signal-rings" aria-hidden="true"></div>
+            <div class="phone demo-phone">
+              <img src="assets/proxy-idle.png" width="1080" height="2340" fetchpriority="high" data-running-src="assets/proxy.png" alt="Главный экран TG WS Proxy 1.2.4">
+              <button class="demo-toggle" type="button" aria-label="Запуск прокси в демо" aria-pressed="false" hidden></button>
+            </div>
+          </div>
+          <div class="demo-footer">
+            <a href="#route">MTProto <svg class="arrow-icon" aria-hidden="true" focusable="false"><use href="#arrow-right"/></svg> WebSocket</a>
+          </div>
+        </figure>
+      </section>
+
+      <section class="section changes liquid-panel" id="changes" aria-labelledby="changes-title">
+        <div class="changes-copy liquid-panel" data-spotlight>
+          <h2 id="changes-title" data-reveal="heading">Что изменилось<br>в v1.2.4</h2>
+          <dl class="change-list">
+            <div data-reveal>
+              <dt>Telegram снова подключается</dt>
+              <dd>Mezets адаптировал исправление резервного TCP-подключения из десктопной версии Flowseal v1.12.0. Теперь прокси выполняет по одной попытке к каждому адресу и увеличивает паузу после неудачных подключений. В проверке Mezets Telegram снова работал через Android-прокси. <a href="https://github.com/Flowseal/tg-ws-proxy/releases/tag/v1.12.0" target="_blank" rel="noopener noreferrer">Релиз Flowseal v1.12.0</a></dd>
+            </div>
+            <div data-reveal>
+              <dt>Главный экран</dt>
+              <dd>Статус, счётчики трафика и активный профиль видны рядом с кнопкой запуска. Когда прокси работает, от круглого значка Telegram расходятся волны.</dd>
+            </div>
+            <div data-reveal>
+              <dt>Локальный адрес IPv4</dt>
+              <dd>В поле адреса доступны цифры и точки. Для сохранения нужен полный IPv4-адрес, например <code>127.0.0.1</code>.</dd>
+            </div>
+            <div data-reveal>
+              <dt>Пакеты настроек</dt>
+              <dd>Профили открываются в отдельной вкладке перед «Инфо». Их можно импортировать из файла или ссылки, а при экспорте исключить секретный ключ.</dd>
+            </div>
+            <div data-reveal>
+              <dt>Темы и диагностика</dt>
+              <dd>Редактор темы доступен с главного экрана. Логи можно фильтровать по уровню и сохранять с маскировкой чувствительных данных.</dd>
+            </div>
+          </dl>
+        </div>
+        <div class="profile-visual liquid-panel" data-spotlight>
+          <figure class="phone">
+            <img src="assets/profiles.png" width="1080" height="2340" loading="lazy" alt="Вкладка Пакеты с открытым меню основного профиля">
+          </figure>
+        </div>
+      </section>
+
+      <section class="section liquid-panel" id="route" aria-labelledby="route-title">
+        <div class="section-head" data-reveal>
+          <h2 id="route-title">Как работал старый форк</h2>
+          <p>Telegram передавал соединение локальному прокси, а Rust-движок определял дата-центр по данным начала сессии и выбирал маршрут.</p>
+        </div>
+        <div class="route-console liquid-panel" data-spotlight>
+          <div class="console-head">
+            <h3 data-reveal="heading">Схема маршрута</h3>
+            <div class="route-controls" role="group" aria-label="Маршрут в схеме" hidden>
+              <button type="button" data-mode="direct" aria-pressed="true">Прямой WSS</button>
+              <button type="button" data-mode="cloudflare" aria-pressed="false">Cloudflare</button>
+              <button type="button" data-mode="tcp" aria-pressed="false">Резервный TCP</button>
+            </div>
+          </div>
+          <ol class="route-track" aria-label="Узлы маршрута">
+            <li><span>Клиент</span><strong>Telegram</strong></li>
+            <li><span>Прокси на телефоне</span><strong class="mono">127.0.0.1:1443</strong></li>
+            <li class="route-hop"><span>Маршрут</span><strong data-hop>Прямой WSS</strong></li>
+            <li><span>Назначение</span><strong>Дата-центр Telegram</strong></li>
+          </ol>
+          <p class="route-description" aria-live="polite" data-route-description data-reveal="copy">Rust-движок открывал защищённый WebSocket к инфраструктуре Telegram. Если подходящее соединение уже было в пуле, прокси мог взять его оттуда.</p>
+        </div>
+        <dl class="explanations liquid-panel" data-spotlight>
+          <div data-reveal>
+            <dt>Пул соединений</dt>
+            <dd>Движок заранее открывал несколько WebSocket-соединений, чтобы при новом запросе использовать готовое. В архивной v1.2.3 размер пула по умолчанию был 4.</dd>
+          </div>
+          <div data-reveal>
+            <dt>Резервные маршруты</dt>
+            <dd>При сбое прямого WebSocket движок мог попробовать настроенные маршруты через Cloudflare. Если они были недоступны и для этого дата-центра был известен адрес, оставался прямой TCP.</dd>
+          </div>
+          <div data-reveal>
+            <dt>Что было видно в логах</dt>
+            <dd>Журнал помогал узнать номер дата-центра, понять, взято ли соединение из пула, и увидеть, когда прокси переключался на резервный маршрут.</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="section liquid-panel" id="history" aria-labelledby="history-title">
+        <div class="section-head" data-reveal>
+          <h2 id="history-title">От ПК к Android</h2>
+          <p>Как появился Android-порт и откуда выросло обновление Mezets.</p>
+        </div>
+        <ol class="timeline" aria-label="История проекта">
+          <li class="liquid-panel timeline-card" data-reveal data-spotlight>
+            <p class="overline">Десктоп</p>
+            <h3>Flowseal</h3>
+            <p>В оригинальном TG WS Proxy клиент Telegram подключался к локальному MTProto-прокси. Дальше соединение с дата-центром брал на себя прокси, используя защищённый WebSocket, когда маршрут был доступен.</p>
+            <a href="https://github.com/Flowseal/tg-ws-proxy" target="_blank" rel="noopener noreferrer">Десктопный проект <svg class="arrow-icon" aria-hidden="true" focusable="false"><use href="#arrow-out"/></svg></a>
+          </li>
+          <li class="liquid-panel timeline-card" data-reveal data-spotlight>
+            <p class="overline">Android · v1.2.3</p>
+            <h3>amurcanov</h3>
+            <p>Android-порт запускал Rust-движок через Android-сервис с постоянным уведомлением. По умолчанию Telegram обращался к <code>127.0.0.1:1443</code>, а кнопка «Применить в Telegram» передавала адрес, порт и секрет в мессенджер.</p>
+            <p>В приложении уже были настройки Cloudflare и пула, ручная конфигурация дата-центров и журнал событий.</p>
+            <a href="https://github.com/amurcanov/tg-ws-proxy-android" target="_blank" rel="noopener noreferrer">Исходный Android-порт <svg class="arrow-icon" aria-hidden="true" focusable="false"><use href="#arrow-out"/></svg></a>
+          </li>
+          <li class="liquid-panel timeline-card current" data-reveal data-spotlight>
+            <p class="overline"><time datetime="2026-11-24">24 ноября 2026</time></p>
+            <h3>Mezets</h3>
+            <p>Владелец исходного Android-репозитория отправил его в архив <time datetime="2026-10-20">20 октября 2026</time>. Когда старая сборка перестала подключаться у Mezets, он перенёс исправление из обновления Flowseal для ПК в Android-форк.</p>
+            <a href="#changes">Что исправили в v1.2.4 <svg class="arrow-icon" aria-hidden="true" focusable="false"><use href="#arrow-up"/></svg></a>
+          </li>
+        </ol>
+      </section>
+
+      <section class="section download liquid-panel" id="download" aria-labelledby="download-title">
+        <div class="liquid-panel download-panel" data-reveal data-spotlight>
+          <p class="overline">Android · v1.2.4</p>
+          <h2 id="download-title">Скачать APK</h2>
+          <div class="actions download-actions">
+            <a class="button primary" data-link="download" data-specular role="link" aria-disabled="true">Скачать Universal APK <svg class="arrow-icon" aria-hidden="true" focusable="false"><use href="#arrow-download"/></svg></a>
+            <a class="button secondary" data-link="releases" hidden>Все сборки <svg class="arrow-icon" aria-hidden="true" focusable="false"><use href="#arrow-out"/></svg></a>
+          </div>
+        </div>
+        <div class="setup liquid-panel" data-reveal data-spotlight>
+          <h3 id="install-title">Подключение к Telegram</h3>
+          <ol>
+            <li>Установите APK. Universal включает сборки для 32- и 64-битных ARM-устройств.</li>
+            <li>Откройте TG WS Proxy и нажмите круглую кнопку Telegram на главном экране.</li>
+            <li>Выберите «Применить в Telegram» и подтвердите добавление прокси в мессенджере.</li>
+          </ol>
+        </div>
+      </section>
+
+      <footer class="site-footer liquid-panel">
+        <div>
+          <strong>Mezets</strong>
+          <a data-link="donation" hidden>Поддержать донатом <svg class="arrow-icon" aria-hidden="true" focusable="false"><use href="#arrow-out"/></svg></a>
+        </div>
+        <div>
+          <a class="back-to-top footer-top" href="#top"><svg class="arrow-icon menu-icon icon-top" aria-hidden="true" focusable="false"><use href="#arrow-up"/></svg>Наверх</a>
+          <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener noreferrer">GPLv3</a>
+          <a data-link="repository" hidden>Форк на GitHub <svg class="arrow-icon" aria-hidden="true" focusable="false"><use href="#arrow-out"/></svg></a>
+        </div>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>
