@@ -58,7 +58,6 @@
   .lead { font-size: 1rem; }
   .actions { gap: 8px; margin-top: 18px; }
   .button { font-size: 0.84rem; padding-inline: 10px; }
-  .byline { margin-top: 16px; }
   .demo-phone { width: min(72%, 212px); }
   .demo-footer { column-gap: 8px; }
   .route-track { --connector-gap: 12px; grid-template-columns: minmax(0, 1fr); padding: 15px 13px 7px; }

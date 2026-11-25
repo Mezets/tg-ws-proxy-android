@@ -1,7 +1,7 @@
 const links = {
   download: "&сслыка&",
-  repository: "",
-  releases: "",
+  repository: "https://github.com/Mezets/tg-ws-proxy-android",
+  releases: "https://github.com/Mezets/tg-ws-proxy-android/releases",
   donation: "",
 }
 

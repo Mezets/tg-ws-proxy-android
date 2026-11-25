@@ -1,28 +1,21 @@
-[data-enter] > h1,
-[data-reveal="heading"].revealed,
-[data-reveal].revealed:not(:focus-within) > :is(h2, h3) {
-  animation: text-unfold 480ms cubic-bezier(.16, 1, .3, 1) var(--reveal-delay, 0ms) backwards;
+[data-enter] > :is(h1, .lead),
+.revealed:is([data-reveal="heading"], [data-reveal="copy"]),
+[data-reveal].revealed > :is(h2, h3, p:not(.overline), dt, dd, ol) {
+  animation: content-enter 280ms cubic-bezier(.2, .75, .25, 1) backwards;
 }
-[data-enter] > .lead,
-[data-reveal="copy"].revealed,
-[data-reveal].revealed:not(:focus-within) > :is(p:not(.overline), dd, ol) {
-  animation: text-settle 420ms cubic-bezier(.2, .75, .25, 1) calc(var(--reveal-delay, 0ms) + 90ms) backwards;
-}
-[data-reveal].revealed:not(:focus-within) > dt {
-  animation: text-settle 320ms cubic-bezier(.2, .75, .25, 1) backwards;
-}
-[data-enter] > h1 { animation-duration: 680ms; }
-[data-enter] > .lead { --reveal-delay: 70ms; }
-.timeline-card:nth-child(2) { --reveal-delay: 55ms; }
-.timeline-card:nth-child(3) { --reveal-delay: 110ms; }
 
-@keyframes text-unfold {
-  from { clip-path: inset(100% -.12em -.15em); translate: 0 .15em; }
-  to { clip-path: inset(-.12em -.12em -.15em); translate: 0 0; }
+[data-enter] > :is(.actions, .hero-links),
+.download-panel.revealed > .actions {
+  animation: actions-enter 220ms ease-out 35ms backwards;
 }
-@keyframes text-settle {
-  from { opacity: .18; translate: 0 7px; }
+
+@keyframes content-enter {
+  from { opacity: .72; translate: 0 4px; }
   to { opacity: 1; translate: 0 0; }
+}
+@keyframes actions-enter {
+  from { opacity: .76; }
+  to { opacity: 1; }
 }
 @keyframes backdrop-shift { to { background-position: 100% 38%, 6% 8%, 80% 64%; } }
 @keyframes signal-confirmed { 0% { scale: .94; opacity: .6; } 100% { scale: 1; opacity: 1; } }

@@ -141,5 +141,22 @@ h1 {
   transform: none;
   cursor: default;
 }
-.byline { margin-top: 20px; color: #afbed1; font-size: .8rem; line-height: 1.5; }
-.byline strong { color: #e0e9f4; font-weight: 600; }
+.hero-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 18px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: .85rem;
+}
+.hero-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  text-decoration: none;
+}
+.hero-links a:is(:hover, :focus-visible) {
+  color: var(--text);
+  text-decoration: underline;
+}
