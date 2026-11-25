@@ -1,5 +1,7 @@
 # TG WS Proxy для Android
 
+![TG WS Proxy для Android — прокси для Telegram](docs/assets/readme-banner.png)
+
 Локальный MTProto-прокси для Telegram. Приложение запускает прокси на телефоне и передаёт настройки в Telegram. Для связи с дата-центрами Telegram движок использует WebSocket, в том числе через Cloudflare CDN.
 
 **Mezets обновил Android-форк до v1.2.4 24.11.2026.**
@@ -34,9 +36,7 @@
 
 ## Сайт
 
-Лендинг лежит в папке [docs](docs). Для публикации через GitHub Pages выберите ветку с исходниками и папку `/docs`. Сборка сайта не требуется.
-
-Чтобы включить скачивание, в [docs/links.js](docs/links.js) замените `&сслыка&` в строке `download` на прямую HTTPS-ссылку на файл Universal APK. Там же можно указать страницу релизов, адрес форка и ссылку для донатов.
+Исходники сайта лежат в папке [docs](docs).
 
 Анимации сайта вдохновлены компонентами React Bits. [Dither](https://reactbits.dev/backgrounds/dither) · [Specular Button](https://reactbits.dev/components/specular-button) · [Spotlight Card](https://reactbits.dev/components/spotlight-card)
 
