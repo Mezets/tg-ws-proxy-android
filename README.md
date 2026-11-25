@@ -4,8 +4,6 @@
 
 Локальный MTProto-прокси для Telegram. Приложение запускает прокси на телефоне и передаёт настройки в Telegram. Для связи с дата-центрами Telegram движок использует WebSocket, в том числе через Cloudflare CDN.
 
-**Mezets обновил Android-форк до v1.2.4 24.11.2026.**
-
 [Исходный Android-порт](https://github.com/amurcanov/tg-ws-proxy-android) · [Десктопный проект Flowseal](https://github.com/Flowseal/tg-ws-proxy)
 
 <img src="docs/assets/proxy.png" alt="Главный экран TG WS Proxy v1.2.4" width="288">
